@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spirit Animal Finder</title>
+
+<style>
+@media (max-width: 600px) {
+  h1 { font-size: 22px; }
+  .card { padding: 20px; }
+  button { width: 100%; margin: 6px 0; }
+}
+
+body.light {
+  background: #f8fafc;
+  color: black;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.container {
+  width: 90%;
+  max-width: 600px;
+  text-align: center;
+}
+
+h1 { margin-bottom: 10px; }
+
+button {
+  padding: 14px 22px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: white;
+  font-weight: 600;
+  border: none;
+  transition: 0.25s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(56,189,248,0.4);
+}
+<button onclick="toggleTheme()">🌙</button>
+function toggleTheme() {
+  document.body.classList.toggle("light");
+}
+
+.card {
+  background: rgba(255,255,255,0.05);
+  padding: 25px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.slider {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.progress {
+  height: 6px;
+  background: #1e293b;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #38bdf8;
+  width: 0%;
+}
+
+.result {
+  font-size: 24px;
+  margin-top: 20px;
+  animation: fade 1s ease;
+}
+
+@keyframes fade {
+  from {opacity:0; transform: translateY(10px);}
+  to {opacity:1;}
+}
+</style>
+</head>
+<body>
+
+<div class="container card" id="app">
+  <h1>Find Your Spirit Animal</h1>
+
+  <div id="home">
+    <button onclick="startQuiz('surface')">🌊 Surface Level</button>
+    <button onclick="startQuiz('deep')">🔮 In Depth</button>
+  </div>
+
+  <div id="quiz" style="display:none;">
+    <div class="progress"><div class="progress-bar" id="bar"></div></div>
+    <h2 id="question"></h2>
+    <input type="range" min="0" max="100" value="50" class="slider" id="slider"/>
+    <div style="display:flex; justify-content:space-between;">
+      <small id="leftLabel"></small>
+      <small id="rightLabel"></small>
+    </div>
+    <button onclick="nextQuestion()">Next</button>
+  </div>
+
+  <div id="result" style="display:none;"></div>
+</div>
+
+<script>
+const animals = ["wolf","owl","tiger","fox","eagle","dog","cat","deer"];
+
+let scores = {};
+animals.forEach(a => scores[a] = 0);
+
+let questions = [];
+let current = 0;
+
+// Surface (5)
+const surfaceQuestions = [
+  {q:"Social energy?", left:"Alone", right:"People", map:["owl","dog"]},
+  {q:"Biggest strength?", left:"Intelligence", right:"Power", map:["owl","tiger"]},
+  {q:"Stress response?", left:"Think deeply", right:"Attack head-on", map:["owl","tiger"]},
+  {q:"Life goal?", left:"Peace", right:"Adventure", map:["deer","eagle"]},
+  {q:"People see you as?", left:"Mysterious", right:"Loyal", map:["cat","dog"]}
+];
+
+// Deep (12)
+const deepQuestions = [
+  {q:"Logic vs instinct?", left:"Logic", right:"Instinct", map:["owl","wolf"]},
+  {q:"Forgiveness level?", left:"Rarely forgive", right:"Forgive easily", map:["tiger","dog"]},
+  {q:"Leader or observer?", left:"Observe", right:"Lead", map:["owl","lion"]},
+  {q:"Trust speed?", left:"Slow trust", right:"Fast trust", map:["cat","dog"]},
+  {q:"Crowds make you?", left:"Drained", right:"Energized", map:["cat","dog"]},
+  {q:"Protect loved ones?", left:"Calm", right:"Fierce", map:["deer","wolf"]},
+  {q:"Advice giver?", left:"Rarely", right:"Often", map:["fox","owl"]},
+  {q:"Attention?", left:"Avoid", right:"Enjoy", map:["owl","tiger"]},
+  {q:"Fight or flight?", left:"Flight", right:"Fight", map:["deer","tiger"]},
+  {q:"Adaptability?", left:"Low", right:"High", map:["deer","fox"]},
+  {q:"Night or day?", left:"Night", right:"Morning", map:["owl","eagle"]},
+  {q:"Freedom vs stability?", left:"Stability", right:"Freedom", map:["deer","eagle"]}
+];
+
+function startQuiz(mode){
+  questions = mode === "surface" ? surfaceQuestions : deepQuestions;
+  current = 0;
+  document.getElementById("home").style.display = "none";
+  document.getElementById("quiz").style.display = "block";
+  showQuestion();
+}
+
+function showQuestion(){
+  const q = questions[current];
+  document.getElementById("question").innerText = q.q;
+  document.getElementById("leftLabel").innerText = q.left;
+  document.getElementById("rightLabel").innerText = q.right;
+  document.getElementById("slider").value = 50;
+
+  document.getElementById("bar").style.width =
+    ((current / questions.length) * 100) + "%";
+}
+
+function nextQuestion(){
+  const val = document.getElementById("slider").value;
+  const q = questions[current];
+
+  if(val < 40) scores[q.map[0]] += 2;
+  else if(val > 60) scores[q.map[1]] += 2;
+  else {
+    scores[q.map[0]] += 1;
+    scores[q.map[1]] += 1;
+  }
+
+  current++;
+  if(current < questions.length) showQuestion();
+  else showResult();
+}
+
+function showResult(){
+  document.getElementById("quiz").style.display = "none";
+
+  const winner = Object.keys(scores).reduce((a,b)=>
+    scores[a] > scores[b] ? a : b
+  );
+
+  const descriptions = {
+    wolf:"Loyal, intense and protective. You value deep bonds.",
+    owl:"Wise and observant. A quiet thinker.",
+    tiger:"Bold and fearless. You dominate challenges.",
+    fox:"Smart and adaptive. A survival genius.",
+    eagle:"Freedom-loving visionary.",
+    dog:"Warm, loyal and social.",
+    cat:"Independent and mysterious.",
+    deer:"Gentle and empathetic soul."
+  };
+
+  const resultDiv = document.getElementById("result");
+  resultDiv.style.display = "block";
+  resultDiv.innerHTML = `
+    <div class="result">
+      🐾 You are a <b>${winner.toUpperCase()}</b><br><br>
+      ${descriptions[winner]}
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>
